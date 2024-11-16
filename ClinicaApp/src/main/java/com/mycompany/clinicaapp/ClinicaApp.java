@@ -21,15 +21,17 @@
              while (!exit) {
                  System.out.println("\nMenú:");
                  System.out.println("1. Registrar paciente");
-                 System.out.println("2. Mostrar el nombre de cada paciente y la cantidad de citas que ha tenido");
-                 System.out.println("3. Contar las citas de un odontólogo específico (código 20201101)");
-                 System.out.println("4. Mostrar todas las citas registradas");
-                 System.out.println("5. Ver citas de un odontólogo específico");
-                 System.out.println("6. Mostrar citas del turno 1 del 5 de octubre de 2023");
-                 System.out.println("7. Ver información de un empleado de portería");
-                 System.out.println("8. Mostrar citas después del 19 de octubre de 2023");
-                 System.out.println("9. Ver nombre de paciente y odontólogo");
-                 System.out.println("10. Salir");
+                 System.out.println("2. Registrar estudiante Odonto");
+                 System.out.println("3. Registrar cita");
+                 System.out.println("4. Mostrar el nombre de cada paciente y la cantidad de citas que ha tenido");
+                 System.out.println("5. Contar las citas de un odontólogo específico (código 20201101)");
+                 System.out.println("6. Mostrar todas las citas registradas");
+                 System.out.println("7. Ver citas de un odontólogo específico");
+                 System.out.println("8. Mostrar citas del turno 1 del 5 de octubre de 2023");
+                 System.out.println("9. Ver información de un empleado de portería");
+                 System.out.println("10. Mostrar citas después del 19 de octubre de 2023");
+                 System.out.println("11. Ver nombre de paciente y odontólogo");
+                 System.out.println("12. Salir");
                  
                  System.out.print("Elige una opción: ");
                  int option = scanner.nextInt();
@@ -39,30 +41,36 @@
                          registrarPaciente(scanner);
                          break;
                      case 2:
-                         mostrarPacientesYCantidadCitas();
+                         registrarEstudiante(scanner);
                          break;
                      case 3:
-                         contarCitasOdontologo();
+                         registrarCita(scanner);
                          break;
                      case 4:
-                         mostrarCitasRegistradas();
+                         mostrarPacientesYCantidadCitas();
                          break;
                      case 5:
-                         mostrarCitasOdontologo();
+                         contarCitasOdontologo();
                          break;
                      case 6:
-                         mostrarCitasTurnoEspecifico();
+                         mostrarCitasRegistradas();
                          break;
                      case 7:
-                         mostrarEmpleadoPorteria();
+                         mostrarCitasOdontologo();
                          break;
                      case 8:
-                         mostrarCitasPosteriores();
+                         mostrarCitasTurnoEspecifico();
                          break;
                      case 9:
-                         mostrarPacienteYEstudiante();
+                         mostrarEmpleadoPorteria();
                          break;
                      case 10:
+                         mostrarCitasPosteriores();
+                         break;
+                     case 11:
+                         mostrarPacienteYEstudiante();
+                         break;
+                     case 12:
                          exit = true;
                          System.out.println("Saliendo...");
                          break;
@@ -87,33 +95,116 @@
      }
  
      private static void registrarPaciente(Scanner scanner) {
-         System.out.print("Ingrese nombre del paciente: ");
-         String nombre = scanner.nextLine();
-         System.out.print("Ingrese apellido paterno: ");
-         String apellidoPaterno = scanner.nextLine();
-         System.out.print("Ingrese apellido materno: ");
-         String apellidoMaterno = scanner.nextLine();
-         System.out.print("Ingrese identificación (docid): ");
-         int docid = scanner.nextInt();
-         scanner.nextLine();
-         System.out.print("Ingrese email del paciente: ");
-         String email = scanner.nextLine();
+        System.out.print("Ingrese nombre del paciente: ");
+        String nombre = scanner.nextLine();
+        
+        System.out.print("Ingrese apellido paterno: ");
+        String apellidoPaterno = scanner.nextLine();
+        
+        System.out.print("Ingrese apellido materno: ");
+        String apellidoMaterno = scanner.nextLine();
+        
+        System.out.print("Ingrese identificación (docid): ");
+        int docid = scanner.nextInt();
+        
+        System.out.print("Ingrese email del paciente: ");
+        String email = scanner.nextLine();
+    
+        String sql = "INSERT INTO paciente (docid, name, apaterno, amaterno, email) VALUES (?, ?, ?, ?, ?)";
+    
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, docid);
+            pstmt.setString(2, nombre);
+            pstmt.setString(3, apellidoPaterno);
+            pstmt.setString(4, apellidoMaterno);
+            pstmt.setString(5, email);
+            pstmt.executeUpdate();
+            System.out.println("Paciente registrado exitosamente.");
+        } catch (SQLException e) {
+            System.out.println("Error al registrar paciente: " + e.getMessage());
+        }
+    }
+
+    private static void registrarEstudiante(Scanner scanner) {
+        System.out.print("Ingrese nombre del estudiante: ");
+        String nombre = scanner.nextLine();
+        System.out.print("Ingrese apellido paterno: ");
+        String apellidoPaterno = scanner.nextLine();
+        System.out.print("Ingrese apellido materno: ");
+        String apellidoMaterno = scanner.nextLine();
+        System.out.print("Ingrese email del estudiante: ");
+        String email = scanner.nextLine();
+        System.out.print("Ingrese código del estudiante (code): ");
+        int codigo = scanner.nextInt();
+        scanner.nextLine();
  
-         String sql = "INSERT INTO paciente (docid, name, apaterno, amaterno, email) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO eodonto (code, name, apaterno, amaterno, email) VALUES (?, ?, ?, ?, ?)";
  
-         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-             pstmt.setInt(1, docid);
-             pstmt.setString(2, nombre);
-             pstmt.setString(3, apellidoPaterno);
-             pstmt.setString(4, apellidoMaterno);
-             pstmt.setString(5, email);
-             pstmt.executeUpdate();
-             System.out.println("Paciente registrado exitosamente.");
-         } catch (SQLException e) {
-             System.out.println("Error al registrar paciente: " + e.getMessage());
-         }
-     }
- 
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, codigo);
+            pstmt.setString(2, nombre);
+            pstmt.setString(3, apellidoPaterno);
+            pstmt.setString(4, apellidoMaterno);
+            pstmt.setString(5, email);
+            pstmt.executeUpdate();
+            System.out.println("Estudiante registrado exitosamente.");
+        } catch (SQLException e) {
+            System.out.println("Error al registrar estudiante: " + e.getMessage());
+        }
+    }
+    
+    private static void registrarCita(Scanner scanner) {
+        try {
+            System.out.print("Ingrese el ID del paciente (docid): ");
+            int docid = scanner.nextInt();
+            scanner.nextLine(); 
+    
+            System.out.print("Ingrese el código del odontólogo (code): ");
+            int code = scanner.nextInt();
+            scanner.nextLine();
+    
+            System.out.print("Ingrese el número de la cita (ncita): ");
+            int ncita = scanner.nextInt();
+            scanner.nextLine();
+    
+            System.out.print("Ingrese el día de la cita: ");
+            int day = scanner.nextInt();
+            System.out.print("Ingrese el mes de la cita: ");
+            int month = scanner.nextInt();
+            System.out.print("Ingrese el año de la cita: ");
+            int year = scanner.nextInt();
+            scanner.nextLine();
+    
+            System.out.print("Ingrese el turno (1 = mañana, 2 = tarde): ");
+            int turno = scanner.nextInt();
+            scanner.nextLine();
+    
+            System.out.print("Ingrese el motivo de la cita: ");
+            String motivo = scanner.nextLine();
+    
+            String sql = "INSERT INTO cita (ncita, docid, code, day, month, year, turno, motivo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setInt(1, ncita);
+                pstmt.setInt(2, docid);
+                pstmt.setInt(3, code);
+                pstmt.setInt(4, day);
+                pstmt.setInt(5, month);
+                pstmt.setInt(6, year);
+                pstmt.setInt(7, turno);
+                pstmt.setString(8, motivo);
+    
+                pstmt.executeUpdate();
+                System.out.println("Cita registrada exitosamente.");
+            } catch (SQLException e) {
+                System.out.println("Error al registrar cita: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            System.out.println("Error en los datos ingresados: " + e.getMessage());
+            scanner.nextLine();
+        }
+    }
+
      private static void mostrarPacientesYCantidadCitas() {
          String query = "SELECT paciente.name, COUNT(ncita) AS nrocitas " +
                         "FROM paciente " +
