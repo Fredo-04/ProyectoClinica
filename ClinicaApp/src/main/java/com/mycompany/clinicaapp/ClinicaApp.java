@@ -27,7 +27,8 @@
                  System.out.println("9. Ver información de un empleado de portería");
                  System.out.println("10. Mostrar citas después del 19 de octubre de 2023");
                  System.out.println("11. Ver nombre de paciente y odontólogo");
-                 System.out.println("12. Salir");
+                 System.out.println("12. Eliminar estudiante de odontologia");
+                 System.out.println("14. Salir");
                  
                  System.out.print("Elige una opción: ");
                  int option = scanner.nextInt();
@@ -43,16 +44,16 @@
                          registrarCita(scanner);
                          break;
                      case 4:
-                         mostrarPacientesYCantidadCitas();
+                         mostrarPacientesYCantidadCitas(scanner);
                          break;
                      case 5:
-                         contarCitasOdontologo();
+                         contarCitasOdontologo(scanner);
                          break;
                      case 6:
                          mostrarCitasRegistradas();
                          break;
                      case 7:
-                         mostrarCitasOdontologo();
+                         mostrarCitasOdontologo(scanner);
                          break;
                      case 8:
                          mostrarCitasTurnoEspecifico();
@@ -132,15 +133,16 @@
         System.out.print("Ingrese código del estudiante (code): ");
         int codigo = scanner.nextInt();
         scanner.nextLine();
- 
-        String sql = "INSERT INTO eodonto (code, name, apaterno, amaterno, email) VALUES (?, ?, ?, ?, ?)";
- 
+    
+        String sql = "CALL registrar_estudiante(?, ?, ?, ?, ?)";
+        
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, codigo);
             pstmt.setString(2, nombre);
             pstmt.setString(3, apellidoPaterno);
             pstmt.setString(4, apellidoMaterno);
             pstmt.setString(5, email);
+    
             pstmt.executeUpdate();
             System.out.println("Estudiante registrado exitosamente.");
         } catch (SQLException e) {
@@ -177,8 +179,8 @@
             System.out.print("Ingrese el motivo de la cita: ");
             String motivo = scanner.nextLine();
     
-            String sql = "INSERT INTO cita (ncita, docid, code, day, month, year, turno, motivo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    
+            String sql = "CALL registrar_cita(?, ?, ?, ?, ?, ?, ?, ?)";
+            
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 pstmt.setInt(1, ncita);
                 pstmt.setInt(2, docid);
@@ -199,63 +201,82 @@
             scanner.nextLine();
         }
     }
+    
 
-     private static void mostrarPacientesYCantidadCitas() {
-        String sql = "SELECT fn_contar_citas_odontologo(?)";
+    private static void mostrarPacientesYCantidadCitas(Scanner scanner) {
+        System.out.print("Ingrese el DNI del paciente: ");
+        int docid = scanner.nextInt();
+        scanner.nextLine();
+    
+        String sql = "SELECT * FROM sp_mostrar_citas_paciente(?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setInt(1, 20201101);
+            pstmt.setInt(1, docid);
+    
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    System.out.println("Número de citas del odontólogo: " + rs.getInt(1));
+                System.out.println("Citas del paciente con DNI " + docid + ":");
+                while (rs.next()) {
+                    int ncita = rs.getInt("ncita");
+                    int dia = rs.getInt("dia");
+                    int mes = rs.getInt("mes");
+                    int anio = rs.getInt("anio");
+                    String motivo = rs.getString("motivo");
+                    System.out.println("Cita #" + ncita + ": " + dia + "/" + mes + "/" + anio + " - Motivo: " + motivo);
                 }
             }
-        } catch (SQLException e) {  
+        } catch (SQLException e) {
+            System.out.println("Error al mostrar citas del paciente: " + e.getMessage());
+        }
+    }
+    
+ 
+    private static void contarCitasOdontologo(Scanner scanner) {
+        System.out.print("Ingrese el código del odontólogo: ");
+        int code = scanner.nextInt();
+        scanner.nextLine();
+    
+        String query = "SELECT fn_contar_citas_odontologo(?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setInt(1, code);
+    
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int nrocitas = rs.getInt(1);
+                    System.out.println("Número de citas del odontólogo con código " + code + ": " + nrocitas);
+                } else {
+                    System.out.println("No se encontraron citas para el odontólogo con código " + code);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al contar citas del odontólogo: " + e.getMessage());
+        }
+    }
+    
+ 
+    private static void mostrarCitasRegistradas() {
+        String sql = "CALL contar_citas_registradas()";
+        
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(sql);
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+    
  
-     private static void contarCitasOdontologo() {
-         String query = "SELECT COUNT(ncita) AS nrocitas " +
-                        "FROM eodonto " +
-                        "INNER JOIN cita ON eodonto.code = cita.code " +
-                        "WHERE eodonto.code = 20201101;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             if (rs.next()) {
-                 System.out.println("Número de citas del odontólogo 20201101: " + rs.getInt("nrocitas"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
-     }
- 
-     private static void mostrarCitasRegistradas() {
-         String query = "SELECT COUNT(ncita) AS nrocitasMes " +
-                        "FROM eodonto " +
-                        "INNER JOIN cita ON eodonto.code = cita.code;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             if (rs.next()) {
-                 System.out.println("Número total de citas registradas: " + rs.getInt("nrocitasMes"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
-     }
- 
-     private static void mostrarCitasOdontologo() {
-         String query = "SELECT cita.ncita, cita.day, cita.month, cita.year, eodonto.name " +
-                        "FROM eodonto " +
-                        "INNER JOIN cita ON eodonto.code = cita.code " +
-                        "WHERE eodonto.code = 20201101;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             while (rs.next()) {
-                 System.out.println("Cita: " + rs.getInt("ncita") + ", Día: " + rs.getInt("day") + 
-                                    ", Mes: " + rs.getInt("month") + ", Año: " + rs.getInt("year") + 
-                                    ", Odontólogo: " + rs.getString("name"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
-     }
+    private static void mostrarCitasOdontologo(Scanner scanner) {
+        System.out.print("Ingrese el código del odontólogo (code): ");
+        int code = scanner.nextInt();
+        
+        String sql = "CALL mostrar_citas_odontologo(?)";
+        
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, code);
+            pstmt.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
  
      private static void mostrarCitasTurnoEspecifico() {
         String sql = "CALL sp_mostrar_citas_por_turno(?, ?, ?, ?)";
