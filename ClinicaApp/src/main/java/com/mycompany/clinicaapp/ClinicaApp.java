@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- */
-
  package com.mycompany.clinicaapp;
  import java.sql.*;
  import java.util.Scanner;
@@ -109,16 +105,15 @@
         
         System.out.print("Ingrese email del paciente: ");
         String email = scanner.nextLine();
-    
-        String sql = "INSERT INTO paciente (docid, name, apaterno, amaterno, email) VALUES (?, ?, ?, ?, ?)";
-    
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setInt(1, docid);
-            pstmt.setString(2, nombre);
-            pstmt.setString(3, apellidoPaterno);
-            pstmt.setString(4, apellidoMaterno);
-            pstmt.setString(5, email);
-            pstmt.executeUpdate();
+        
+        String sql = "{CALL sp_registrar_paciente(?, ?, ?, ?, ?)}";
+        try (CallableStatement cstmt = connection.prepareCall(sql)) {
+            cstmt.setInt(1, docid);
+            cstmt.setString(2, nombre);
+            cstmt.setString(3, apellidoPaterno);
+            cstmt.setString(4, apellidoMaterno);
+            cstmt.setString(5, email);
+            cstmt.execute();
             System.out.println("Paciente registrado exitosamente.");
         } catch (SQLException e) {
             System.out.println("Error al registrar paciente: " + e.getMessage());
@@ -206,18 +201,18 @@
     }
 
      private static void mostrarPacientesYCantidadCitas() {
-         String query = "SELECT paciente.name, COUNT(ncita) AS nrocitas " +
-                        "FROM paciente " +
-                        "INNER JOIN cita ON paciente.docid = cita.docid " +
-                        "GROUP BY paciente.name;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             while (rs.next()) {
-                 System.out.println("Paciente: " + rs.getString("name") + ", Citas: " + rs.getInt("nrocitas"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
-     }
+        String sql = "SELECT fn_contar_citas_odontologo(?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, 20201101);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("Número de citas del odontólogo: " + rs.getInt(1));
+                }
+            }
+        } catch (SQLException e) {  
+            e.printStackTrace();
+        }
+    }
  
      private static void contarCitasOdontologo() {
          String query = "SELECT COUNT(ncita) AS nrocitas " +
@@ -263,59 +258,75 @@
      }
  
      private static void mostrarCitasTurnoEspecifico() {
-         String query = "SELECT * FROM cita " +
-                        "WHERE turno = '1' AND day = 5 AND month = 10 AND year = 2023;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             while (rs.next()) {
-                 System.out.println("Cita: " + rs.getInt("ncita") + ", Día: " + rs.getInt("day") + 
-                                    ", Mes: " + rs.getInt("month") + ", Año: " + rs.getInt("year") + 
-                                    ", Motivo: " + rs.getString("motivo"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
+        String sql = "CALL sp_mostrar_citas_por_turno(?, ?, ?, ?)";
+        try (CallableStatement cstmt = connection.prepareCall(sql)) {
+            cstmt.setInt(1, 1); 
+            cstmt.setInt(2, 5);
+            cstmt.setInt(3, 10);
+            cstmt.setInt(4, 2023);
+            try (ResultSet rs = cstmt.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println("Cita: " + rs.getInt("ncita") + 
+                        ", Día: " + rs.getInt("day") +
+                        ", Mes: " + rs.getInt("month") +
+                        ", Año: " + rs.getInt("year") +
+                        ", Motivo: " + rs.getString("motivo"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
      }
  
      private static void mostrarEmpleadoPorteria() {
-         String query = "SELECT listc.id, eport.nombre, eport.apaterno " +
-                        "FROM eport " +
-                        "INNER JOIN listc ON eport.idlista = listc.id " +
-                        "WHERE eport.idport = 4;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             while (rs.next()) {
-                 System.out.println("ID Lista: " + rs.getInt("id") + ", Nombre: " + rs.getString("nombre") + 
-                                    ", Apellido: " + rs.getString("apaterno"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
+        String sql = "CALL sp_mostrar_empleado_porteria(?)";
+        try (CallableStatement cstmt = connection.prepareCall(sql)) {
+            cstmt.setInt(1, 4);
+            try (ResultSet rs = cstmt.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println("ID Lista: " + rs.getInt("id_lista") +
+                        ", Nombre: " + rs.getString("nombre") +
+                        ", Apellido: " + rs.getString("apaterno"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
      }
  
      private static void mostrarCitasPosteriores() {
-         String query = "SELECT * FROM cita " +
-                        "WHERE day > 19 AND month = 10;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             while (rs.next()) {
-                 System.out.println("Cita: " + rs.getInt("ncita") + ", Día: " + rs.getInt("day") + 
-                                    ", Mes: " + rs.getInt("month") + ", Año: " + rs.getInt("year"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
+        String sql = "CALL sp_mostrar_citas_posteriores(?, ?, ?)";
+        try (CallableStatement cstmt = connection.prepareCall(sql)) {
+            cstmt.setInt(1, 19);
+            cstmt.setInt(2, 10);
+            cstmt.setInt(3, 2023);
+            try (ResultSet rs = cstmt.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println("Cita: " + rs.getInt("ncita") + 
+                        ", Día: " + rs.getInt("day") +
+                        ", Mes: " + rs.getInt("month") +
+                        ", Año: " + rs.getInt("year") +
+                        ", Motivo: " + rs.getString("motivo"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
      }
  
      private static void mostrarPacienteYEstudiante() {
-         String query = "SELECT paciente.name AS paciente, eodonto.name AS estudiante " +
-                        "FROM cita " +
-                        "INNER JOIN eodonto ON eodonto.code = cita.code " +
-                        "INNER JOIN paciente ON paciente.docid = cita.docid;";
-         try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {
-             while (rs.next()) {
-                 System.out.println("Paciente: " + rs.getString("paciente") + ", Odontólogo: " + rs.getString("estudiante"));
-             }
-         } catch (SQLException e) {
-             e.printStackTrace();
-         }
+        String sql = "CALL sp_mostrar_pacientes_y_odontologos()";
+        try (CallableStatement cstmt = connection.prepareCall(sql)) {
+            try (ResultSet rs = cstmt.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println("Paciente: " + rs.getString("paciente") + 
+                        ", Odontólogo: " + rs.getString("odontologo"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
      }
  }
  
